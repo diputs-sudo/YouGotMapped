@@ -1,0 +1,10 @@
+.env
+ip_geolocation_map.html
+__pycache__/
+build/
+dist/                        
+logs/                        
+*.log                        
+*.py[cod]                   
+.DS_Store                   
+*.egg-info/ 
