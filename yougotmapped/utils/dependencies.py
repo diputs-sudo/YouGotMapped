@@ -1,33 +1,55 @@
-# utils/dependencies.py
+# Dependency Definitions
+
 import importlib.util
 import subprocess
 import sys
 
 
-def check_dependencies():
-    required = {
-        "requests": "requests",
-        "folium": "folium",
-        "ping3": "ping3",
-        "python-dotenv": "dotenv"
-    }
+REQUIRED_PACKAGES = {
+    "requests": "requests",
+    "folium": "folium",
+    "ping3": "ping3",
+    "scapy": "scapy"
+}
 
+
+def _is_installed(module_name: str) -> bool:
+    return importlib.util.find_spec(module_name) is not None
+
+
+def _install_package(package_name: str) -> bool:
+    try:
+        subprocess.check_call(
+            [sys.executable, "-m", "pip", "install", package_name],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        return True
+    except subprocess.CalledProcessError:
+        return False
+
+
+def check_dependencies(interactive: bool = True) -> None:
     print("\nChecking dependencies:\n")
 
-    for package_name, module_name in required.items():
-        spec = importlib.util.find_spec(module_name)
-        if spec is not None:
-            print(f"   [OK] {package_name} found")
+    for package, module in REQUIRED_PACKAGES.items():
+        if _is_installed(module):
+            print(f"   [OK] {package} found")
+            continue
+
+        print(f"   [MISSING] {package} not found")
+
+        if not interactive:
+            print(f"   Install '{package}' manually and try again.")
+            sys.exit(1)
+
+        choice = input(f"   Install '{package}' now? (yes/no): ").strip().lower()
+        if choice not in ("yes", "y"):
+            print(f"   Cannot continue without '{package}'. Exiting.")
+            sys.exit(1)
+
+        if _install_package(package):
+            print(f"   '{package}' successfully installed")
         else:
-            print(f"   [MISSING] {package_name} not found")
-            choice = input(f"   Install '{package_name}' now? (yes/no): ").strip().lower()
-            if choice in ['yes', 'y']:
-                try:
-                    subprocess.check_call([sys.executable, "-m", "pip", "install", package_name])
-                    print(f"   '{package_name}' successfully installed\n")
-                except subprocess.CalledProcessError:
-                    print(f"    Failed to install '{package_name}'. Please install manually.")
-                    sys.exit(1)
-            else:
-                print(f"   Cannot continue without '{package_name}'. Exiting.")
-                sys.exit(1)
+            print(f"   Failed to install '{package}'. Install manually.")
+            sys.exit(1)
