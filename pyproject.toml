@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "yougotmapped"
+version = "1.1.0"
+description = "A terminal tool to map IPs and domains with style."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+
+authors = [
+    { name = "diputs", email = "diputs-sudo@proton.me" }
+]
+
+dependencies = [
+    "requests",
+    "folium",
+    "ping3",
+    "scapy"
+]
+
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent"
+]
+
+[project.urls]
+Homepage = "https://github.com/diputs-sudo/YouGotMapped"
+
+[project.scripts]
+yougotmapped = "yougotmapped.cli:main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
