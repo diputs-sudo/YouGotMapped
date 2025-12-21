@@ -1,67 +1,110 @@
-import folium
 from pathlib import Path
+import folium
 
-def plot_ip_location(ip_data, color='red', map_object=None):
-    if 'loc' not in ip_data:
-        print("Location data not available.")
-        return
+DEFAULT_GEO_RADIUS_KM = 40  
 
-    latitude, longitude = map(float, ip_data['loc'].split(','))
 
-    m = map_object if map_object else folium.Map(location=[latitude, longitude], zoom_start=12)
+def plot_ip_location(geo: dict):
+    lat = geo.get("latitude")
+    lon = geo.get("longitude")
+
+    if lat is None or lon is None:
+        return None
+
+    m = folium.Map(location=[lat, lon], zoom_start=6)
 
     folium.Marker(
-        [latitude, longitude],
-        popup=f"IP: {ip_data.get('ip', 'N/A')}\nCity: {ip_data.get('city', 'N/A')}\nRegion: {ip_data.get('region', 'N/A')}\nCountry: {ip_data.get('country', 'N/A')}",
-        icon=folium.Icon(color=color)
+        location=[lat, lon],
+        popup=f"IP: {geo.get('ip')}",
+        icon=folium.Icon(color="red", icon="info-sign"),
     ).add_to(m)
 
     folium.Circle(
-        radius=10000,
-        location=[latitude, longitude],
-        color=color,
+        location=[lat, lon],
+        radius=DEFAULT_GEO_RADIUS_KM * 1000,  # meters
+        color="red",
         fill=True,
-        fill_color=color,
-        fill_opacity=0.2,
-        popup="Approximate Area"
+        fill_color="red",
+        fill_opacity=0.15,
+        popup="Approximate IP geolocation",
     ).add_to(m)
 
     return m
 
 
-def plot_multiple_ip_locations(ip_data_list):
-    if not ip_data_list:
-        print("No valid IP data to plot.")
-        return
+def plot_multiple_ip_locations(geos: list[dict]):
+    coords = [
+        (g.get("latitude"), g.get("longitude"))
+        for g in geos
+        if g.get("latitude") is not None and g.get("longitude") is not None
+    ]
 
-    center_data = next((d for d in ip_data_list if 'loc' in d), None)
-    if not center_data:
-        print("No valid location data found in input list.")
-        return
+    if not coords:
+        return None
 
-    latitude, longitude = map(float, center_data['loc'].split(','))
-    m = folium.Map(location=[latitude, longitude], zoom_start=2)
+    avg_lat = sum(lat for lat, _ in coords) / len(coords)
+    avg_lon = sum(lon for _, lon in coords) / len(coords)
 
-    for data in ip_data_list:
-        if 'loc' not in data:
+    m = folium.Map(location=[avg_lat, avg_lon], zoom_start=3)
+
+    for geo in geos:
+        lat = geo.get("latitude")
+        lon = geo.get("longitude")
+        if lat is None or lon is None:
             continue
-        lat, lon = map(float, data['loc'].split(','))
+
         folium.Marker(
-            [lat, lon],
-            popup=f"IP: {data.get('ip', 'N/A')}\nCity: {data.get('city', 'N/A')}\nRegion: {data.get('region', 'N/A')}\nCountry: {data.get('country', 'N/A')}",
-            icon=folium.Icon(color='red')
+            location=[lat, lon],
+            popup=f"IP: {geo.get('ip')}",
+            icon=folium.Icon(color="red", icon="info-sign"),
         ).add_to(m)
 
         folium.Circle(
-            radius=10000,
             location=[lat, lon],
-            color='red',
+            radius=DEFAULT_GEO_RADIUS_KM * 1000,
+            color="red",
             fill=True,
-            fill_color='red',
-            fill_opacity=0.2,
-            popup="Approximate Area"
+            fill_color="red",
+            fill_opacity=0.15,
         ).add_to(m)
 
-    save_path = Path(__file__).resolve().parent.parent / 'ip_geolocation_map.html'
-    m.save(save_path)
-    print(f"Map saved with multiple IPs as '{save_path.name}' in {save_path.parent}")
+    return m
+
+
+def plot_traceroute_path(trace_result: dict, m):
+    hops = trace_result.get("hops", [])
+    prev = None
+
+    for hop in hops:
+        lat = hop.get("latitude")
+        lon = hop.get("longitude")
+
+        if lat is None or lon is None:
+            continue
+
+        point = [lat, lon]
+
+        folium.CircleMarker(
+            location=point,
+            radius=4,
+            color="blue",
+            fill=True,
+            fill_opacity=0.9,
+            popup=f"Hop {hop.get('hop')} ({hop.get('ip')})",
+        ).add_to(m)
+
+        if prev:
+            folium.PolyLine(
+                locations=[prev, point],
+                color="blue",
+                weight=2,
+                opacity=0.6,
+            ).add_to(m)
+
+        prev = point
+
+
+def save_map(m, filename: str) -> str:
+    path = Path(filename).resolve()
+    m.save(str(path))
+    return str(path)
