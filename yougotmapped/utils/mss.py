@@ -108,7 +108,6 @@ def discover_mss(
         except Exception:
             pass
 
-    # Fallback estimation 
     est = _estimate_mss(median_rtt_ms, traceroute_ok)
 
     return {
