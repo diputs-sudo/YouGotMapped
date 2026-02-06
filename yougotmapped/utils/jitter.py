@@ -5,6 +5,7 @@ import statistics
 
 
 def jitter_test(host: str, count: int = 20, timeout: float = 1.0) -> dict:
+
     rtts = []
 
     for _ in range(count):
@@ -29,7 +30,6 @@ def jitter_test(host: str, count: int = 20, timeout: float = 1.0) -> dict:
 
     median_rtt = statistics.median(rtts)
 
-    # Mean absolute deviation (real jitter, not fake variance)
     jitter_ms = statistics.mean(abs(rtt - median_rtt) for rtt in rtts)
 
     min_rtt = round(min(rtts), 2)
@@ -60,6 +60,7 @@ def jitter_test(host: str, count: int = 20, timeout: float = 1.0) -> dict:
 
 
 def format_jitter_result(result: dict) -> None:
+    
     if not result.get("reachable"):
         print("Jitter test failed (insufficient replies).")
         return
