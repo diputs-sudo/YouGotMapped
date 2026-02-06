@@ -1,10 +1,11 @@
 from pathlib import Path
 import folium
 
-DEFAULT_GEO_RADIUS_KM = 40  
+DEFAULT_GEO_RADIUS_KM = 40  # IP geolocation uncertainty radius
 
 
 def plot_ip_location(geo: dict):
+
     lat = geo.get("latitude")
     lon = geo.get("longitude")
 
@@ -13,12 +14,14 @@ def plot_ip_location(geo: dict):
 
     m = folium.Map(location=[lat, lon], zoom_start=6)
 
+    # Destination marker
     folium.Marker(
         location=[lat, lon],
         popup=f"IP: {geo.get('ip')}",
         icon=folium.Icon(color="red", icon="info-sign"),
     ).add_to(m)
 
+    # Uncertainty circle 
     folium.Circle(
         location=[lat, lon],
         radius=DEFAULT_GEO_RADIUS_KM * 1000,  # meters
@@ -33,6 +36,7 @@ def plot_ip_location(geo: dict):
 
 
 def plot_multiple_ip_locations(geos: list[dict]):
+
     coords = [
         (g.get("latitude"), g.get("longitude"))
         for g in geos
@@ -72,6 +76,7 @@ def plot_multiple_ip_locations(geos: list[dict]):
 
 
 def plot_traceroute_path(trace_result: dict, m):
+
     hops = trace_result.get("hops", [])
     prev = None
 
@@ -84,6 +89,7 @@ def plot_traceroute_path(trace_result: dict, m):
 
         point = [lat, lon]
 
+        # Hop marker (no circle)
         folium.CircleMarker(
             location=point,
             radius=4,
@@ -105,6 +111,7 @@ def plot_traceroute_path(trace_result: dict, m):
 
 
 def save_map(m, filename: str) -> str:
+    
     path = Path(filename).resolve()
     m.save(str(path))
     return str(path)
